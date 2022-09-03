@@ -1,7 +1,7 @@
 from django.db.models.manager import Manager
 from django.db.models.query import QuerySet
 from django.db.models.fields import AutoField, IntegerField
-from django.db.models import Min, Max
+from django.db.models import Max, Min
 
 from dbutils.helpers import attach_foreignkey
 
@@ -25,7 +25,7 @@ class SkinnyQuerySet(QuerySet):
     def __len__(self):
         if getattr(self, 'has_run_before', False):
             raise TypeError("SkinnyQuerySet doesn't support __len__ after __iter__, if you *only* need a count you should use .count(), if you need to reuse the results you should coerce to a list and then len() that.")
-        return super(SkinnyQuerySet, self).__len__()
+        return super().__len__()
 
     def __iter__(self):
         if self._result_cache is not None:
@@ -47,7 +47,7 @@ class InvalidQuerySetError(ValueError):
     pass
 
 
-class IterableQuerySetWrapper(object):
+class IterableQuerySetWrapper:
     """
     Iterates through a QuerySet using limit and offset.
 
@@ -66,8 +66,7 @@ class IterableQuerySetWrapper(object):
 
         results = list(self.queryset[at:(at + self.step)])
         while results and (not self.limit or at < self.limit):
-            for result in results:
-                yield result
+            yield from results
             at += self.step
             results = list(self.queryset[at:(at + self.step)])
 
@@ -96,12 +95,11 @@ class RangeQuerySet(SkinnyQuerySet):
         elif not bypass:
             results = IterableQuerySetWrapper(self, step=self.step)
         else:
-            results = super(RangeQuerySet, self).iterator()
-        for result in results:
-            yield result
+            results = super().iterator()
+        yield from results
 
 
-class RangeQuerySetWrapper(object):
+class RangeQuerySetWrapper:
     """
     Iterates through a queryset by chunking results by ``step`` and using GREATER THAN
     and LESS THAN queries on the primary key.
